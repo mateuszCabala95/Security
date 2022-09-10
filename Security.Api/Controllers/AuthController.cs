@@ -51,7 +51,7 @@ public class AuthController: ControllerBase
     }
 
     [HttpGet("isvalid/{userName}")]
-    public async Task<IActionResult> IsValidToken([FromQuery] string userName, [FromBody] string jwt)
+    public async Task<IActionResult> IsValidToken([FromRoute] string userName, [FromBody] string jwt)
     {
         return Ok(true);
     }
