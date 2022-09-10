@@ -1,6 +1,10 @@
-﻿using System.Security.Cryptography;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using Security.Api.DTOs;
+using Security.Api.Models;
 
 namespace Security.Api.Controllers;
 
@@ -8,6 +12,11 @@ namespace Security.Api.Controllers;
 [Route("api/[controller]")]
 public class AuthController: ControllerBase
 {
+    private readonly IConfiguration _configuration;
+    public AuthController(IConfiguration configuration)
+    {
+        _configuration = configuration;
+    }
 
     private static List<Models.User> users = new(); 
     [HttpPost("egister")]
@@ -39,8 +48,6 @@ public class AuthController: ControllerBase
         return Ok("My crazy token");
     }
     
-    
-
     private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
     {
         using var hmac = new HMACSHA512();
@@ -54,5 +61,25 @@ public class AuthController: ControllerBase
         var computedHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
 
         return computedHash.SequenceEqual(passwordHash);
+    }
+
+    private string CreateToken(User user)
+    {
+        List<Claim> claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.Name, user.UserName),
+        };
+
+        var key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(_configuration.GetSection("Jwt:SecretKey").Value));
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
+
+        var token = new JwtSecurityToken(
+            claims: claims,
+            expires: DateTime.Now.AddDays(1),
+            signingCredentials: creds);
+
+        var jwt = new JwtSecurityTokenHandler().WriteToken(token);
+
+        return jwt;
     }
 }
