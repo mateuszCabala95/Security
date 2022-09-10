@@ -12,16 +12,18 @@ namespace Security.Api.Controllers;
 [Route("api/[controller]")]
 public class AuthController: ControllerBase
 {
+    private static List<User> users = new();
     private readonly IConfiguration _configuration;
     public AuthController(IConfiguration configuration)
     {
         _configuration = configuration;
     }
-
-    private static List<Models.User> users = new(); 
-    [HttpPost("egister")]
+    
+    [HttpPost("register")]
     public async Task<IActionResult> Reqister([FromBody]UserDto userDto)
     {
+        if (users.Any(x => x.UserName == userDto.Username)) return BadRequest("User already exist");
+        
         CreatePasswordHash(userDto.Password, out var passwordHash, out var passwordSalt);
 
         var newUser = new Models.User
@@ -45,9 +47,15 @@ public class AuthController: ControllerBase
         {
             return BadRequest("Wrong Password");
         }
-        return Ok("My crazy token");
+        return Ok(CreateToken(user));
     }
-    
+
+    [HttpGet("isvalid/{userName}")]
+    public async Task<IActionResult> IsValidToken([FromQuery] string userName, [FromBody] string jwt)
+    {
+        return Ok(true);
+    }
+
     private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
     {
         using var hmac = new HMACSHA512();
