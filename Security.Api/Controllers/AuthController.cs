@@ -34,7 +34,7 @@ public class AuthController: ControllerBase
         };
         users.Add(newUser);
         
-        return Ok(newUser);
+        return Ok(CreateToken((newUser)));
     }
 
     [HttpPost("login")]
@@ -50,10 +50,10 @@ public class AuthController: ControllerBase
         return Ok(CreateToken(user));
     }
 
-    [HttpGet("isvalid/{userName}")]
+    [HttpPost("isvalid/{userName}")]
     public async Task<IActionResult> IsValidToken([FromRoute] string userName, [FromBody] string jwt)
     {
-        return Ok(true);
+        return Ok(users.Any(x => x.UserName == userName));
     }
 
     private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
